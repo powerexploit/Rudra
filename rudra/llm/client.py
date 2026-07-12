@@ -27,8 +27,15 @@ class LLMClient:
     def _post(self, url: str, headers: dict, payload: dict) -> dict:
         data = json.dumps(payload).encode()
         req = urllib.request.Request(url, data=data, headers=headers, method="POST")
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            return json.loads(resp.read().decode())
+        try:
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                return json.loads(resp.read().decode())
+        except urllib.error.HTTPError as e:
+            # Surface the API's actual error message (e.g. invalid model, bad
+            # request field) instead of a bare "HTTP Error 400".
+            body = e.read().decode("utf-8", "replace")[:600]
+            raise RuntimeError(f"LLM API returned {e.code} for model "
+                               f"'{self.cfg.llm_model}': {body}") from None
 
     def _anthropic(self, system: str, user: str) -> str:
         body = self._post(

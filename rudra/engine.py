@@ -68,25 +68,44 @@ def run_review(repo: str, pr: int, files: list[dict],
 
     findings: list[Finding] = []
     confirmed = suppressed = 0
+    llm_failed = False        # set on first systemic LLM error (bad model/key/etc.)
     for c in all_candidates:
         if c.deterministic:
             findings.append(_candidate_to_finding(c))
             confirmed += 1
             continue
-        if not llm_ready:
+        if not llm_ready or llm_failed:
             if cfg.require_llm_confirmation:
                 suppressed += 1          # precision over recall when no model
                 continue
             findings.append(_candidate_to_finding(c))
             continue
         # Stage 2: triage
-        f = triage(client, cfg, c)
+        try:
+            f = triage(client, cfg, c)
+        except Exception as e:
+            # A model/API error is almost always systemic (bad model id, key,
+            # rate limit). Disable the LLM stage, log it once, and fall back to
+            # deterministic-only for the rest -- never crash the whole review.
+            llm_failed = True
+            result.logs.append(
+                f"LLM stage disabled after error: {e}. Continuing "
+                f"deterministic-only for remaining candidates.")
+            if cfg.require_llm_confirmation:
+                suppressed += 1
+            else:
+                findings.append(_candidate_to_finding(c))
+            continue
         if f is None:
             suppressed += 1
             continue
         # Stage 3: adversarial verify
         if cfg.enable_verifier:
-            f = verify(client, f)
+            try:
+                f = verify(client, f)
+            except Exception as e:
+                # Verifier failure is non-fatal: keep the triaged finding.
+                result.logs.append(f"Verifier error (finding kept unverified): {e}")
             if f is None:
                 suppressed += 1
                 continue

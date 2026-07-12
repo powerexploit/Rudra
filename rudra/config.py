@@ -14,7 +14,7 @@ class Config:
     # ---- LLM provider ----
     # "anthropic", "openai", or "none" (deterministic-only mode).
     llm_provider: str = os.getenv("RUDRA_LLM_PROVIDER", "anthropic")
-    llm_model: str = os.getenv("RUDRA_LLM_MODEL", "claude-sonnet-4-5")
+    llm_model: str = os.getenv("RUDRA_LLM_MODEL", "claude-sonnet-5")
     llm_api_key: str | None = os.getenv("RUDRA_LLM_API_KEY") or os.getenv("ANTHROPIC_API_KEY") or os.getenv("OPENAI_API_KEY")
     llm_temperature: float = 0.0      # determinism matters for reproducible reviews
     llm_max_tokens: int = 1500

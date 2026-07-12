@@ -36,6 +36,11 @@ def _emit(result, cfg: Config, gh=None):
 def review_pr(repo: str, pr: int, cfg: Config) -> bool:
     from .github_client import GitHubClient
     gh = GitHubClient(cfg)
+    # Write an empty-but-valid SARIF first, so the upload step always has a file
+    # even if something below throws unexpectedly.
+    if cfg.write_sarif and not Path(cfg.sarif_path).exists():
+        Path(cfg.sarif_path).write_text(R.to_sarif(
+            R.ReviewResult(repo=repo, pr_number=pr, head_sha="")))
     head = gh.pr_head_sha(repo, pr)
     files = gh.changed_files(repo, pr)
     result = run_review(repo, pr, files,

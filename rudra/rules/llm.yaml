@@ -1,0 +1,72 @@
+# Rudra declarative rules. Extend freely via pull request.
+# Fields: id, owasp, title, severity(info|low|medium|high|critical),
+#         pattern(regex), message, remediation, confidence(0..1),
+#         deterministic(bool), extensions(optional list).
+#
+# Keep `confidence` low for anything heuristic -- the LLM triage/verifier
+# stages exist precisely to filter these before they reach a human.
+
+rules:
+  - id: RUDRA-YAML-SYSTEM-PROMPT-SECRET
+    owasp: "LLM07:2025"
+    title: Possible secret embedded in a system prompt
+    severity: high
+    pattern: '(?i)(system|instructions?)\s*[:=].{0,80}(api[_-]?key|password|secret|token|bearer)'
+    message: >-
+      A system-prompt string appears to contain credentials. System prompts can
+      be extracted via prompt injection, leaking the secret.
+    remediation: >-
+      Never place credentials in prompts. Inject secrets at the tool/API layer
+      from a secrets manager, and keep them out of any model-visible context.
+    confidence: 0.4
+
+  - id: RUDRA-YAML-JS-LLM-INNERHTML
+    owasp: "LLM05:2025"
+    title: Model output written to innerHTML
+    severity: high
+    extensions: [".js", ".ts", ".tsx"]
+    pattern: '(?i)\.innerHTML\s*=\s*.*(completion|message|response|choices|llm|gpt|answer)'
+    message: >-
+      LLM output looks like it is assigned to innerHTML, enabling stored/DOM XSS
+      if the model emits markup.
+    remediation: >-
+      Render model output as text (textContent) or sanitise with a vetted
+      sanitiser (e.g. DOMPurify) before inserting into the DOM.
+    confidence: 0.45
+
+  - id: RUDRA-YAML-DANGEROUS-HTML-REACT
+    owasp: "LLM05:2025"
+    title: Model output via dangerouslySetInnerHTML
+    severity: high
+    extensions: [".tsx", ".js", ".ts"]
+    pattern: 'dangerouslySetInnerHTML'
+    message: >-
+      dangerouslySetInnerHTML bypasses React escaping; if fed model output it is
+      an XSS sink.
+    remediation: >-
+      Avoid it for model output. Sanitise the HTML first, or render as plain text.
+    confidence: 0.35
+
+  - id: RUDRA-YAML-VECTOR-DB-OPEN
+    owasp: "LLM08:2025"
+    title: Vector store initialised without access control
+    severity: medium
+    pattern: '(?i)(Pinecone|Weaviate|Chroma|Qdrant|Milvus)\s*\('
+    message: >-
+      A vector store is being initialised. Verify tenant isolation and auth --
+      shared indexes leak embeddings across users (RAG data exposure).
+    remediation: >-
+      Namespace/partition per tenant, require auth on the store, and filter
+      retrieval by the caller's authorisation scope.
+    confidence: 0.3
+
+  - id: RUDRA-YAML-NO-TIMEOUT-REQUESTS
+    owasp: "LLM10:2025"
+    title: Outbound LLM/API call without a timeout
+    severity: low
+    pattern: '(?i)requests\.(get|post)\((?![^)]*timeout)'
+    message: >-
+      HTTP call to a model/tool endpoint has no timeout; a slow or hostile
+      endpoint can hang workers (resource exhaustion).
+    remediation: "Always pass an explicit `timeout=`."
+    confidence: 0.3

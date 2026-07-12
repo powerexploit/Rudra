@@ -1,0 +1,44 @@
+name: "Rudra LLM Security Review"
+description: "Detect GenAI/LLM security issues (OWASP LLM Top 10) in pull requests."
+branding:
+  icon: "shield"
+  color: "purple"
+
+inputs:
+  github-token:
+    description: "Token used to read the PR and post the review comment."
+    required: true
+  llm-api-key:
+    description: "API key for the triage/verifier model. If omitted, Rudra runs deterministic-only."
+    required: false
+  llm-provider:
+    description: "anthropic | openai | none"
+    default: "anthropic"
+  llm-model:
+    default: "claude-sonnet-4-5"
+  fail-threshold-score:
+    description: "Fail the check if any finding scores at/above this (0-10)."
+    default: "7.0"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    - shell: bash
+      run: pip install "${{ github.action_path }}"
+    - shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        RUDRA_PR_NUMBER: ${{ github.event.pull_request.number }}
+        RUDRA_LLM_API_KEY: ${{ inputs.llm-api-key }}
+        RUDRA_LLM_PROVIDER: ${{ inputs.llm-provider }}
+        RUDRA_LLM_MODEL: ${{ inputs.llm-model }}
+        RUDRA_FAIL_SCORE: ${{ inputs.fail-threshold-score }}
+      run: rudra
+    - uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: rudra.sarif

@@ -1,0 +1,17 @@
+# .github/workflows/rudra.yml
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+jobs:
+  rudra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: powerexploit/rudra@v0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          llm-api-key: ${{ secrets.RUDRA_LLM_API_KEY }}   # omit → deterministic-only
+          fail-threshold-score: "7.0"

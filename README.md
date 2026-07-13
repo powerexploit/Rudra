@@ -1,6 +1,9 @@
-# 🛡️ Rudra
+<p align="center">
+  <img src="assets/logo.svg" alt="Rudra" width="480" />
+</p>
 
-**An open-source GenAI/LLM security reviewer for pull requests.**
+<p align="center"><b>Precision-funnel AI security review for LLM/GenAI pull requests.</b></p>
+
 Rudra scans the code changed in a PR for the vulnerabilities in the
 [OWASP Top 10 for LLM Applications (2025)](https://genai.owasp.org/llm-top-10/),
 and comments back with the issue, its impact, a concrete fix, and a score — all

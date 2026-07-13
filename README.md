@@ -105,8 +105,19 @@ declarative entries in [`rudra/rules/llm.yaml`](rudra/rules/llm.yaml).
 
 ### As a GitHub Action (the bot)
 
+**1. Add repo secrets** — Settings → Secrets and variables → Actions → New
+repository secret:
+
+| Secret | Value |
+|--------|-------|
+| `RUDRA_LLM_API_KEY` | Your Anthropic or OpenAI API key (optional — omit for deterministic-only mode) |
+| `RUDRA_LLM_PROVIDER` | `anthropic` or `openai` — **must match the key above.** Required whenever `RUDRA_LLM_API_KEY` is set; the action can't infer the vendor from the key itself. |
+
+`GITHUB_TOKEN` is provided automatically by GitHub Actions — no setup needed.
+
+**2. Add the workflow file** — `.github/workflows/rudra.yml`:
+
 ```yaml
-# .github/workflows/rudra.yml
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -121,12 +132,21 @@ jobs:
       - uses: powerexploit/Rudra@v0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          llm-api-key: ${{ secrets.RUDRA_LLM_API_KEY }}   # omit → deterministic-only
+          llm-api-key: ${{ secrets.RUDRA_LLM_API_KEY }}
+          llm-provider: ${{ secrets.RUDRA_LLM_PROVIDER }}
           fail-threshold-score: "7.0"
 ```
 
-On every PR, Rudra posts a sticky review comment and uploads SARIF so findings
-also appear as inline annotations in the **Files changed** tab.
+Secrets are repo-wide, so no per-branch setup is needed there. The workflow
+*file* itself is branch-specific, though: for `pull_request`, GitHub runs
+`.github/workflows/rudra.yml` **as it exists on the PR's source branch**, not
+the base branch — so if you add or edit this file, make sure that change is on
+the branch you're opening the PR from, not just on `main`.
+
+**3. Open a pull request.** Rudra posts one sticky review comment (updated in
+place on every push, not reposted), uploads SARIF so findings also show as
+inline annotations in the **Files changed** tab, and fails the check if any
+finding scores at/above `fail-threshold-score`.
 
 ### Locally
 
@@ -138,9 +158,13 @@ rudra scan path/to/code
 
 # Review a live PR (needs GITHUB_TOKEN):
 export GITHUB_TOKEN=...            # repo read + PR write
-export RUDRA_LLM_API_KEY=...       # optional; deterministic-only without it
+export ANTHROPIC_API_KEY=...       # or OPENAI_API_KEY -- optional; deterministic-only without it
 rudra review powerexploit/Rudra 1 2 3
 ```
+
+Setting `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` directly lets Rudra auto-detect
+the provider. If you'd rather use a generically-named key, set both
+`RUDRA_LLM_API_KEY` and `RUDRA_LLM_PROVIDER` (`anthropic` | `openai`) instead.
 
 ---
 

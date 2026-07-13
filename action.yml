@@ -12,13 +12,29 @@ inputs:
     description: "API key for the triage/verifier model. If omitted, Rudra runs deterministic-only."
     required: false
   llm-provider:
-    description: "anthropic | openai | none"
-    default: "anthropic"
+    description: "anthropic | openai | none. Leave blank to auto-detect from whichever of ANTHROPIC_API_KEY / OPENAI_API_KEY is set (falls back to deterministic-only 'none' if neither is set)."
+    default: ""
   llm-model:
-    default: "claude-sonnet-5"
+    description: "Model name for the chosen provider. Leave blank to use a sensible per-provider default (claude-sonnet-5 for anthropic, gpt-4o-mini for openai)."
+    default: ""
   fail-threshold-score:
     description: "Fail the check if any finding scores at/above this (0-10)."
     default: "7.0"
+  enable-verifier:
+    description: "Run the adversarial verifier pass (biggest single false-positive reducer, costs 1 extra LLM call per candidate)."
+    default: "true"
+  require-llm-confirmation:
+    description: "If no LLM is configured, suppress non-deterministic candidates instead of reporting unconfirmed heuristics."
+    default: "true"
+  triage-samples:
+    description: "Self-consistency vote count for triage (1 = off; 3 is a good high-signal setting for noisy repos)."
+    default: "1"
+  min-confidence:
+    description: "Minimum final confidence (0-1) for a finding to be reported at all."
+    default: "0.55"
+  min-score:
+    description: "Minimum Rudra score (0-10) for a finding to be posted to the PR."
+    default: "4.0"
 
 runs:
   using: "composite"
@@ -37,6 +53,11 @@ runs:
         RUDRA_LLM_PROVIDER: ${{ inputs.llm-provider }}
         RUDRA_LLM_MODEL: ${{ inputs.llm-model }}
         RUDRA_FAIL_SCORE: ${{ inputs.fail-threshold-score }}
+        RUDRA_ENABLE_VERIFIER: ${{ inputs.enable-verifier }}
+        RUDRA_REQUIRE_LLM_CONFIRMATION: ${{ inputs.require-llm-confirmation }}
+        RUDRA_TRIAGE_SAMPLES: ${{ inputs.triage-samples }}
+        RUDRA_MIN_CONFIDENCE: ${{ inputs.min-confidence }}
+        RUDRA_MIN_SCORE: ${{ inputs.min-score }}
       run: rudra
     - uses: github/codeql-action/upload-sarif@v3
       if: always()

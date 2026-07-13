@@ -22,7 +22,9 @@ class LLMClient:
             raise RuntimeError("LLM not configured")
         if self.cfg.llm_provider == "anthropic":
             return self._anthropic(system, user)
-        return self._openai(system, user)
+        if self.cfg.llm_provider == "openai":
+            return self._openai(system, user)
+        raise RuntimeError(f"Unsupported llm_provider {self.cfg.llm_provider!r}")
 
     def _post(self, url: str, headers: dict, payload: dict) -> dict:
         data = json.dumps(payload).encode()

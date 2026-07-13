@@ -59,7 +59,7 @@ def to_sarif(result: ReviewResult) -> str:
         "runs": [{
             "tool": {"driver": {
                 "name": "Rudra",
-                "informationUri": "https://github.com/your-username/rudra",
+                "informationUri": "https://github.com/powerexploit/Rudra",
                 "rules": rules,
             }},
             "results": sarif_results,

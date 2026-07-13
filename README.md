@@ -115,7 +115,7 @@ jobs:
   rudra:
     runs-on: ubuntu-latest
     steps:
-      - uses: your-username/rudra@v0
+      - uses: powerexploit/Rudra@v0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           llm-api-key: ${{ secrets.RUDRA_LLM_API_KEY }}   # omit → deterministic-only
@@ -136,7 +136,7 @@ rudra scan path/to/code
 # Review a live PR (needs GITHUB_TOKEN):
 export GITHUB_TOKEN=...            # repo read + PR write
 export RUDRA_LLM_API_KEY=...       # optional; deterministic-only without it
-rudra review your-username/rudra 1 2 3
+rudra review powerexploit/Rudra 1 2 3
 ```
 
 ---
@@ -147,14 +147,14 @@ All knobs live in [`rudra/config.py`](rudra/config.py) and are overridable by en
 
 | Env / field | Default | What it does |
 |-------------|---------|--------------|
-| `RUDRA_LLM_PROVIDER` | `anthropic` | `anthropic` \| `openai` \| `none` |
-| `RUDRA_LLM_MODEL` | `claude-sonnet-4-5` | triage/verifier model |
-| `min_confidence` | `0.55` | drop findings below this final confidence |
-| `min_score` | `4.0` | don't post findings scoring below this |
+| `RUDRA_LLM_PROVIDER` | *(auto-detected)* | `anthropic` \| `openai` \| `none`; blank auto-detects from `ANTHROPIC_API_KEY`/`OPENAI_API_KEY`, else `none` |
+| `RUDRA_LLM_MODEL` | *(provider default)* | triage/verifier model; blank picks `claude-sonnet-5` for anthropic or `gpt-4o-mini` for openai |
 | `RUDRA_FAIL_SCORE` | `7.0` | fail CI if any finding ≥ this |
-| `enable_verifier` | `True` | run the adversarial pass |
-| `triage_samples` | `1` | self-consistency vote count |
-| `require_llm_confirmation` | `True` | suppress heuristics when no LLM |
+| `RUDRA_ENABLE_VERIFIER` | `true` | run the adversarial pass |
+| `RUDRA_TRIAGE_SAMPLES` | `1` | self-consistency vote count |
+| `RUDRA_REQUIRE_LLM_CONFIRMATION` | `true` | suppress heuristics when no LLM |
+| `RUDRA_MIN_CONFIDENCE` | `0.55` | drop findings below this final confidence |
+| `RUDRA_MIN_SCORE` | `4.0` | don't post findings scoring below this |
 
 ---
 

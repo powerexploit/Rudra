@@ -28,29 +28,29 @@ them.
     │
     ▼
  ┌─────────────────────────────┐
- │ STAGE 1 — Deterministic      │   No LLM. Fast. High recall.
- │  • Python AST + taint        │   Produces CANDIDATES, each tagged with the
- │  • YAML regex rules           │   exact file/line, the quoted code, an OWASP
- │  • provider-secret scan       │   id, and a detector confidence.
+ │ STAGE 1 — Deterministic     │   No LLM. Fast. High recall.
+ │  • Python AST + taint       │   Produces CANDIDATES, each tagged with the
+ │  • YAML regex rules         │   exact file/line, the quoted code, an OWASP
+ │  • provider-secret scan     │   id, and a detector confidence.
  └──────────────┬──────────────┘
                 │  (only lines the PR actually changed survive)
                 ▼
  ┌─────────────────────────────┐
- │ STAGE 2 — LLM triage          │   Judges ONE candidate at a time. May not
- │  confirm / refute, grounded   │   invent new findings. Defaults to
- │  (optional N-sample vote)     │   false_positive. Returns confidence +
+ │ STAGE 2 — LLM triage        │   Judges ONE candidate at a time. May not
+ │  confirm / refute, grounded │   invent new findings. Defaults to
+ │  (optional N-sample vote)   │   false_positive. Returns confidence +
  └──────────────┬──────────────┘   reachability.
                 │  (refuted → dropped)
                 ▼
  ┌─────────────────────────────┐
- │ STAGE 3 — Adversarial verifier│   A second model call whose job is to
- │  "prove this is a FALSE pos"  │   DISPROVE the finding. Survives only if the
+ │ STAGE 3 — Adversarial verify│   A second model call whose job is to
+ │  "prove this is a FALSE pos"│   DISPROVE the finding. Survives only if the
  └──────────────┬──────────────┘   attack fails.
                 │
                 ▼
  ┌─────────────────────────────┐
- │ Score + gate                  │   score = severity × confidence × reachability
- │  suppress < threshold, dedup  │   → 0–10 Rudra score
+ │ Score + gate reachability   │   score = severity × confidence ×          
+ │  suppress < threshold, dedup│   → 0–10 Rudra score
  └──────────────┬──────────────┘
                 ▼
    SARIF (inline annotations) + Markdown PR comment + JSON
